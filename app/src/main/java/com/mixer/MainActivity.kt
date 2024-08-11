@@ -1,5 +1,6 @@
 package com.mixer
 
+import android.Manifest
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -11,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.core.app.ActivityCompat
 import com.mixer.ui.theme.MixerTheme
 import com.mixer.utils.AppNavigator
 import com.mixer.views.MainScreen
@@ -23,9 +25,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             MixerTheme {
-               Scaffold {
-                   paddingValues -> MainScreen(paddingValues = paddingValues)
-               }
+                Scaffold { paddingValues ->
+                    MainScreen(paddingValues = paddingValues)
+                }
             }
         }
     }

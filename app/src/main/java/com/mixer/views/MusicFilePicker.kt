@@ -1,7 +1,6 @@
 package com.mixer.views
 
 import android.net.Uri
-import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
@@ -14,13 +13,11 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import com.mixer.viewmodel.UriHandlerVM
+import com.mixer.viewmodel.MusicFilePickerVM
 
 @Composable
-fun MusicFilePicker(navController: NavController, viewModel: UriHandlerVM ) {
+fun MusicFilePicker(navController: NavController, viewModel: MusicFilePickerVM ) {
     val selectedMusicUri by viewModel.selectedMusicUri.observeAsState()
 
     // Create a launcher for the file picker

@@ -2,43 +2,53 @@ package com.mixer.views
 
 import android.Manifest
 import android.annotation.SuppressLint
-import android.content.Context
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioRecord
 import android.media.AudioTrack
-import android.media.MediaPlayer
-import android.media.MediaRecorder
-import android.media.audiofx.AcousticEchoCanceler
-import android.media.audiofx.NoiseSuppressor
-import android.os.Environment
+import android.media.MediaRecorder.AudioSource
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.net.toUri
 import androidx.navigation.NavController
-import com.mixer.viewmodel.UriHandlerVM
+import com.mixer.viewmodel.MusicFilePickerVM
+import com.mixer.viewmodel.PlayerRecorderVM
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
 
 
 @Composable
-fun PlayerAndRecorder(navController: NavController,viewModel:UriHandlerVM) {
+fun PlayerAndRecorder(
+    navController: NavController,
+    backgroundMusicVM: MusicFilePickerVM,
+    playerRecorderVM: PlayerRecorderVM
+) {
     val context = LocalContext.current
+    val micAudio by playerRecorderVM.micAudio.observeAsState()
+    val backgroundMusic by backgroundMusicVM.selectedMusicUri.observeAsState()
 
     var isRecording by remember { mutableStateOf(false) }
+    //Permissions
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
                 isRecording = true
             } else {
-                // Handle permission denied
+                //permission denied
+                Toast.makeText(context, "Permission not granted", Toast.LENGTH_SHORT).show()
             }
         }
     )
@@ -55,7 +65,9 @@ fun PlayerAndRecorder(navController: NavController,viewModel:UriHandlerVM) {
         }
 
         if (isRecording) {
-            StartRecordingAndPlaying()
+//            StartRecordingAndPlaying()
+        } else {
+
         }
     }
 }
@@ -67,10 +79,11 @@ fun StartRecordingAndPlaying() {
     val sampleRate = 44100
     val channelConfig = AudioFormat.CHANNEL_IN_MONO
     val audioFormat = AudioFormat.ENCODING_PCM_16BIT
-    val bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) * 2
+    var bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) * 2
+
     val audioRecord = remember {
         AudioRecord(
-            MediaRecorder.AudioSource.VOICE_COMMUNICATION,
+            AudioSource.VOICE_COMMUNICATION,
             sampleRate,
             channelConfig,
             audioFormat,

@@ -15,7 +15,7 @@ import java.io.OutputStream
 import javax.inject.Inject
 
 @HiltViewModel
-class UriHandlerVM @Inject constructor() : ViewModel() {
+class MusicFilePickerVM @Inject constructor() : ViewModel() {
     private val _selectedMusicUri = MutableLiveData<Uri?>(null)
     val selectedMusicUri: LiveData<Uri?> get() = _selectedMusicUri
     val musicByteArray:ByteArray? = null

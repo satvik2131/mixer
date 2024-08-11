@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.Flow
 
 @UnstableApi
 class Mixer {
-
     fun mixAudioStreams(stream1: ByteArray, stream2: ByteArray):ByteArray {
         val mixedStream = ByteArray(stream1.size)
         for (i in stream1.indices) {

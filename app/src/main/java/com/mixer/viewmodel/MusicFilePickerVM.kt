@@ -25,7 +25,6 @@ class MusicFilePickerVM @Inject constructor() : ViewModel() {
     }
 
      fun fileFromContentUri(context: Context, contentUri: Uri): File {
-
         val fileExtension = getFileExtension(context, contentUri)
         val fileName = "temporary_file" + if (fileExtension != null) ".$fileExtension" else ""
 

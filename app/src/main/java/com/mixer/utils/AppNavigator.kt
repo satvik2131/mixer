@@ -14,7 +14,7 @@ fun AppNavigator() {
     val navController = rememberNavController();
     val backgroundMusicVM = MusicFilePickerVM()
     val playerRecorderVm = PlayerRecorderVM()
-    NavHost(navController = navController, startDestination = "player") {
+    NavHost(navController = navController, startDestination = "takemusic") {
         composable ("takemusic"){ MusicFilePicker(navController,backgroundMusicVM) }
         composable("player") { PlayerAndRecorder(navController, backgroundMusicVM,playerRecorderVm) }
     }

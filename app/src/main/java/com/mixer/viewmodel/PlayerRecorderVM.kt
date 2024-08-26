@@ -3,28 +3,14 @@ package com.mixer.viewmodel
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.AudioFormat
-import android.media.AudioManager
-import android.media.AudioRecord
-import android.media.AudioTrack
-import android.media.MediaExtractor
-import android.media.MediaFormat
-import android.media.MediaRecorder.AudioSource
+import android.media.*
+import android.media.audiofx.NoiseSuppressor
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
-import androidx.annotation.OptIn
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.core.app.ActivityCompat
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import androidx.media3.common.C
-import androidx.media3.common.C.PcmEncoding
-import androidx.media3.common.audio.AudioProcessor
-import androidx.media3.common.util.UnstableApi
-import androidx.media3.transformer.DefaultAudioMixer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.nio.ByteBuffer
 import javax.inject.Inject
 
@@ -40,7 +26,7 @@ class PlayerRecorderVM @Inject constructor() : ViewModel() {
     val audioFormat = AudioFormat.ENCODING_PCM_16BIT
     var bufferSize = AudioRecord.getMinBufferSize(sampleRate, channelConfig, audioFormat) * 2
 
-
+    // Start recording from the microphone
     fun startMicAudioRecording(context: Context): AudioRecord? {
         if (ActivityCompat.checkSelfPermission(
                 context,
@@ -53,11 +39,9 @@ class PlayerRecorderVM @Inject constructor() : ViewModel() {
                 Toast.LENGTH_SHORT
             ).show()
             return null
-
         } else {
-            //Audio->Record
             audioRecord = AudioRecord(
-                AudioSource.VOICE_COMMUNICATION,
+                MediaRecorder.AudioSource.VOICE_COMMUNICATION,
                 sampleRate,
                 channelConfig,
                 audioFormat,
@@ -66,18 +50,21 @@ class PlayerRecorderVM @Inject constructor() : ViewModel() {
                 startRecording()
             }
 
+            // Apply noise suppression to improve mic input clarity
+            NoiseSuppressor.create(audioRecord!!.audioSessionId)
+
             return audioRecord
         }
     }
 
-
+    // Play mixed audio through the speaker
     fun playMixedAudio(mixedAudio: ByteArray, sampleRate: Int = 44100) {
         audioTrack = AudioTrack(
             AudioManager.STREAM_MUSIC,
             sampleRate,
             AudioFormat.CHANNEL_OUT_MONO,
             AudioFormat.ENCODING_PCM_16BIT,
-            mixedAudio.size /2,  // Size in bytes
+            mixedAudio.size,
             AudioTrack.MODE_STATIC
         ).apply {
             write(mixedAudio, 0, mixedAudio.size)
@@ -92,28 +79,18 @@ class PlayerRecorderVM @Inject constructor() : ViewModel() {
         audioTrack?.release()
     }
 
-
-    fun extractAudioData(context: Context, uri: Uri): ByteBuffer {
+    // Extract audio data from the selected MP3 file
+    suspend fun extractAudioData(context: Context, uri: Uri): ByteBuffer = withContext(Dispatchers.IO) {
         val extractor = MediaExtractor()
         extractor.setDataSource(context, uri, null)
 
-        // Ensure the track is selected correctly
         if (extractor.trackCount <= 0) {
             throw IllegalArgumentException("No audio track found in the provided URI")
         }
 
         val format: MediaFormat = extractor.getTrackFormat(0)
 
-        val mime = format.getString(MediaFormat.KEY_MIME)
-            ?: throw IllegalArgumentException("No MIME type found")
-
-        // Check for the key existence before accessing
-        val bufferSize = if (format.containsKey(MediaFormat.KEY_MAX_INPUT_SIZE)) {
-            format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE)
-        } else {
-            1024 * 1024  // Default buffer size
-        }
-
+        val bufferSize = format.getInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 1024 * 1024)
         val buffer = ByteBuffer.allocate(bufferSize)
 
         extractor.selectTrack(0)
@@ -125,7 +102,16 @@ class PlayerRecorderVM @Inject constructor() : ViewModel() {
         }
 
         extractor.release()
-        return buffer
+        buffer
     }
 
+    // Mix microphone and MP3 audio streams
+    fun mixAudioStreams(micAudio: ByteArray, mp3Audio: ByteBuffer): ByteArray {
+        // Mix mic audio with MP3 audio
+        val mixedAudio = ByteArray(micAudio.size)
+        for (i in mixedAudio.indices) {
+            mixedAudio[i] = (micAudio[i] + mp3Audio.get(i)).toByte()
+        }
+        return mixedAudio
+    }
 }

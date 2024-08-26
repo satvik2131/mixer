@@ -1,4 +1,4 @@
-package com.mixer
+    package com.mixer
 
 import android.app.Application
 import dagger.hilt.android.HiltAndroidApp
